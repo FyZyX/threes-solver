@@ -1,0 +1,12 @@
+# MacOS
+.DS_Store
+
+# Virtualenv
+venv
+
+# PyCharm
+.idea
+
+# Debugging
+snapshot.png
+tiles

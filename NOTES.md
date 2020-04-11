@@ -1,0 +1,5 @@
+- [Open Chrome with Profile](https://stackoverflow.com/questions/31062789/how-to-load-default-profile-in-chrome-using-python-selenium-webdriver)
+- [pillow talk](https://note.nkmk.me/en/python-pillow-image-crop-trimming/)
+- https://pypi.org/project/pytesseract/
+- https://gist.github.com/henrik/1967035
+- https://www.pluralsight.com/guides/importing-image-data-into-numpy-arrays
