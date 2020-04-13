@@ -1,9 +1,12 @@
 import os
+import pickle
 import time
 from collections import namedtuple
 
+import numpy
 from PIL import Image
 from selenium import webdriver
+from sklearn import svm
 
 USER = os.environ.get('USER', 'lucaslofaro')
 
@@ -14,9 +17,23 @@ def chrome_profile_path(user):
     return os.path.join(os.sep, 'Users', user, '.config', 'google-chrome')
 
 
+def save_training_image(image, coords):
+    tile = image.convert(mode='L').resize((20, round(20 * 1.5)))
+    i, j = coords
+    tile.save(f'tiles-cache/tile-{i}-{j}-train-{int(time.time())}.png')
+
+
+def make_a_teachings(data):
+    svm.SVC(gamma=0.001, C=100)
+
+
 class Snapshot:
     def __init__(self, filename, size):
         self.filename = filename
+
+        # Load pre-trained tile recognition model
+        with open('tile_recognizer.pickle', 'rb') as fh:
+            self.model = pickle.load(fh)
 
         game_width, game_height = 654, 976
         game_x_offset = 8  # No idea why I have to do this...
@@ -27,23 +44,28 @@ class Snapshot:
         dim = Dimensions(width, game_y_offset, game_width, game_height)
         self.crop(dim)
 
-        os.makedirs('tiles', exist_ok=True)
+        os.makedirs('tiles-cache', exist_ok=True)
 
-    @staticmethod
-    def crop_tiles(board):
+    def crop_tiles(self, board):
         # Upper-left corner of first tile
         dim = Dimensions(101, 240, 100, 148)
         x_pad, y_pad = 18, 10
 
         left, top = dim.x_offset, dim.y_offset
         right, bottom = left + dim.width, top + dim.height
+        tiles = []
         for i in range(4):
             for j in range(4):
                 x_offset = (dim.width + x_pad) * j
                 y_offset = (dim.height + y_pad) * i
                 tile = board.crop((left + x_offset, top + y_offset,
                                    right + x_offset, bottom + y_offset))
-                tile.save(f'tiles/tile-{i}-{j}.png')
+                tile = tile.convert(mode='L').resize((20, round(20 * 1.5)))
+                tiles.append(numpy.asarray(tile).flatten())
+                # save_training_image(tile, (i, j))
+        value = self.model.predict(tiles)
+        board = numpy.resize(value, (4, 4))
+        print(board)
 
     def crop(self, dim):
         board = Image.open(self.filename)
@@ -85,6 +107,8 @@ class Game:
         self.browser = Browser()
 
         self.open()
+        while True:
+            time.sleep(60)
 
     def open(self, load_wait=2):
         print(f'Opening {self.url} ...')
