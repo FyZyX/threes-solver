@@ -54,6 +54,7 @@ class Snapshot:
         left, top = dim.x_offset, dim.y_offset
         right, bottom = left + dim.width, top + dim.height
         tiles = []
+        # TODO: Replace with iteration over cartesian product
         for i in range(4):
             for j in range(4):
                 x_offset = (dim.width + x_pad) * j
