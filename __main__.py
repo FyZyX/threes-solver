@@ -54,16 +54,16 @@ class Snapshot:
         left, top = dim.x_offset, dim.y_offset
         right, bottom = left + dim.width, top + dim.height
         tiles = []
-        # TODO: Replace with iteration over cartesian product
-        for i in range(4):
-            for j in range(4):
-                x_offset = (dim.width + x_pad) * j
-                y_offset = (dim.height + y_pad) * i
-                tile = board.crop((left + x_offset, top + y_offset,
-                                   right + x_offset, bottom + y_offset))
-                tile = tile.convert(mode='L').resize((20, round(20 * 1.5)))
-                tiles.append(numpy.asarray(tile).flatten())
-                # save_training_image(tile, (i, j))
+
+        for i, j in [(i, j) for i in range(4) for j in range(4)]:
+            x_offset = (dim.width + x_pad) * j
+            y_offset = (dim.height + y_pad) * i
+            tile = board.crop((left + x_offset, top + y_offset,
+                               right + x_offset, bottom + y_offset))
+            tile = tile.convert(mode='L').resize((20, round(20 * 1.5)))
+            tiles.append(numpy.asarray(tile).flatten())
+            # save_training_image(tile, (i, j))
+
         value = self.model.predict(tiles)
         board = numpy.resize(value, (4, 4))
         print(board)
