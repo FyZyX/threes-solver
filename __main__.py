@@ -1,20 +1,16 @@
 import os
 import pickle
 import time
-from collections import namedtuple
 
 import numpy
 from PIL import Image
 from selenium import webdriver
-from sklearn import svm
+
+from model import Box, Tile
 
 USER = os.environ.get('USER', 'lucaslofaro')
-
-Dimensions = namedtuple('Dimension', ('x_offset', 'y_offset', 'width', 'height'))
-
-
-def chrome_profile_path(user):
-    return os.path.join(os.sep, 'Users', user, '.config', 'google-chrome')
+CHROME_PROFILE = os.path.join(os.sep, 'Users', USER, '.config', 'google-chrome')
+SNAPSHOT_FILE = 'snapshot.png'
 
 
 def save_training_image(image, coords):
@@ -23,17 +19,11 @@ def save_training_image(image, coords):
     tile.save(f'tiles-cache/tile-{i}-{j}-train-{int(time.time())}.png')
 
 
-def make_a_teachings(data):
-    svm.SVC(gamma=0.001, C=100)
-
-
 class Snapshot:
-    def __init__(self, filename, size):
-        self.filename = filename
+    def __init__(self, size):
+        self.filename = SNAPSHOT_FILE
 
-        # Load pre-trained tile recognition model
-        with open('tile_recognizer.pickle', 'rb') as fh:
-            self.model = pickle.load(fh)
+        self.model = self.load_recognizer()
 
         game_width, game_height = 654, 976
         game_x_offset = 8  # No idea why I have to do this...
@@ -41,63 +31,66 @@ class Snapshot:
         # This is pretty counter-intuitive...feels like I should taking half the
         # remaining width (browser width - game width), but this works I guess
         width = size['width'] - game_width / 2 - game_x_offset
-        dim = Dimensions(width, game_y_offset, game_width, game_height)
-        self.crop(dim)
+        box = Box.from_dimensions(width, game_y_offset, game_width, game_height)
+        self.crop(box)
 
         os.makedirs('tiles-cache', exist_ok=True)
 
-    def crop_tiles(self, board):
-        # Upper-left corner of first tile
-        dim = Dimensions(101, 240, 100, 148)
+    @staticmethod
+    def load_recognizer():
+        """Load pre-trained tile recognition model."""
+        with open('tile_recognizer.pickle', 'rb') as fh:
+            return pickle.load(fh)
+
+    def crop_tiles(self, board: Image):
+        box = Box.from_dimensions(101, 240, 100, 148)
         x_pad, y_pad = 18, 10
 
-        left, top = dim.x_offset, dim.y_offset
-        right, bottom = left + dim.width, top + dim.height
         tiles = []
-
         for i, j in [(i, j) for i in range(4) for j in range(4)]:
-            x_offset = (dim.width + x_pad) * j
-            y_offset = (dim.height + y_pad) * i
-            tile = board.crop((left + x_offset, top + y_offset,
-                               right + x_offset, bottom + y_offset))
-            tile = tile.convert(mode='L').resize((20, round(20 * 1.5)))
-            tiles.append(numpy.asarray(tile).flatten())
+            x_offset = (box.width + x_pad) * j
+            y_offset = (box.height + y_pad) * i
+            tile_box = Box(box.left + x_offset,
+                           box.top + y_offset,
+                           box.right + x_offset,
+                           box.bottom + y_offset)
+            tile = board.crop(tile_box.coordinates)
+            tile = Tile(tile)
+            tiles.append(tile.to_datapoint())
             # save_training_image(tile, (i, j))
 
         value = self.model.predict(tiles)
         board = numpy.resize(value, (4, 4))
         print(board)
 
-    def crop(self, dim):
-        board = Image.open(self.filename)
+    def crop(self, box):
+        with Image.open(self.filename) as board:
+            board = board.crop(box.coordinates)
 
-        left, top = dim.x_offset, dim.y_offset
-        right, bottom = left + dim.width, top + dim.height
-        board = board.crop((left, top, right, bottom))
-
-        self.crop_tiles(board)
-        board.save(self.filename)
+            self.crop_tiles(board)
+            board.save(self.filename)
 
 
 class Browser:
+    options = {
+        'user-data-dir': CHROME_PROFILE,
+    }
+
     def __init__(self):
         chrome_options = webdriver.ChromeOptions()
-        options = {
-            'user-data-dir': chrome_profile_path(USER),
-        }
-        [chrome_options.add_argument(f'{option}={value}')
-         for option, value in options.items()]
+        for option, value in self.options.items():
+            chrome_options.add_argument(f'{option}={value}')
 
-        self._browser = webdriver.Chrome(options=chrome_options)
+        self._driver = webdriver.Chrome(options=chrome_options)
 
     def get(self, url):
-        self._browser.get(url)
+        self._driver.get(url)
 
-    def snapshot(self, outfile):
-        self._browser.save_screenshot(outfile)
-        window_size = self._browser.get_window_size()
-        snap = Snapshot(outfile, window_size)
-        print(f"Captured snapshot: '{outfile}'")
+    def snapshot(self):
+        self._driver.save_screenshot(SNAPSHOT_FILE)
+        window_size = self._driver.get_window_size()
+        snap = Snapshot(window_size)
+        print(f"Captured snapshot")
         return snap
 
 
@@ -105,21 +98,28 @@ class Game:
     url = 'http://play.threesgame.com/'
 
     def __init__(self):
+        self.board = None
         self.browser = Browser()
+        self.start()
 
-        self.open()
-        while True:
-            time.sleep(60)
-
-    def open(self, load_wait=2):
+    def start(self, load_wait=2):
         print(f'Opening {self.url} ...')
         self.browser.get(self.url)
 
-        # Capture initial board position
         print(f'Allowing {load_wait} seconds for game to load ...')
         time.sleep(load_wait)
-        self.browser.snapshot('snapshot.png')
+
+    def play(self):
+        while True:
+            self.parse_board()
+            whatiwant = input('What you want? ')
+            print('AHHHHHH!', whatiwant)
+
+    def parse_board(self):
+        # Capture board position
+        self.board = self.browser.snapshot()
 
 
 if __name__ == '__main__':
-    Game()
+    g = Game()
+    g.play()
