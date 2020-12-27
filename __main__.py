@@ -20,12 +20,19 @@ def save_training_image(image, coords):
 
 
 class Snapshot:
-    def __init__(self):
-        self.filename = SNAPSHOT_FILE
+    def __init__(self, image=None):
+        self._image: Image = image
 
         self.model = self.load_recognizer()
 
         os.makedirs('tiles-cache', exist_ok=True)
+
+    @classmethod
+    def load(cls, filename, box):
+        with Image.open(filename) as image:
+            image = image.crop(box.coordinates)
+            image.save(filename)
+        return cls(image)
 
     @staticmethod
     def load_recognizer():
@@ -33,13 +40,12 @@ class Snapshot:
         with open('tile_recognizer.pickle', 'rb') as fh:
             return pickle.load(fh)
 
-    def datapoints_to_board(self, image: Image):
-        datapoints = self.extract_datapoints(image)
+    def datapoints_to_board(self):
+        datapoints = self.extract_datapoints()
         value = self.model.predict(datapoints)
-        b = Board(numpy.resize(value, (4, 4)))
-        print(b.tiles)
+        return Board(numpy.resize(value, (4, 4)))
 
-    def extract_datapoints(self, image: Image):
+    def extract_datapoints(self):
         tile_offset = 101, 240
         tile_width, tile_height = 100, 148
         box = BoundingBox.from_dimensions(*tile_offset, tile_width, tile_height)
@@ -53,30 +59,14 @@ class Snapshot:
                                    box.top + y_offset,
                                    box.right + x_offset,
                                    box.bottom + y_offset)
-            tile = image.crop(tile_box.coordinates)
+            tile = self._image.crop(tile_box.coordinates)
             tile = Tile(tile)
             datapoints.append(tile.to_datapoint())
 
         return datapoints
 
-    def crop(self, box):
-        with Image.open(self.filename) as board:
-            board = board.crop(box.coordinates)
-
-            self.datapoints_to_board(board)
-            board.save(self.filename)
-
-    def capture(self, size):
-        # TODO: Move magic numbers to more appropriate place
-        board_width, board_height = 654, 976
-        board_x_offset = 8  # No idea why I have to do this...
-        board_y_offset = 32
-        # This is pretty counter-intuitive...feels like I should taking half the
-        # remaining width (browser width - game width), but this works I guess
-        width = size['width'] - board_width / 2 - board_x_offset
-        box = BoundingBox.from_dimensions(
-            width, board_y_offset, board_width, board_height)
-        self.crop(box)
+    def crop(self, box: BoundingBox):
+        return self._image.crop(box.coordinates)
 
 
 class Browser:
@@ -94,12 +84,14 @@ class Browser:
     def get(self, url):
         self._driver.get(url)
 
-    def snapshot(self):
-        self._driver.save_screenshot(SNAPSHOT_FILE)
+    def snapshot(self, filename):
+        self._driver.save_screenshot(filename)
         window_size = self._driver.get_window_size()
-        snap = Snapshot().capture(window_size)
         print(f"Captured snapshot")
-        return snap
+        return window_size
+
+    def close(self):
+        self._driver.close()
 
 
 class Game:
@@ -108,7 +100,6 @@ class Game:
     def __init__(self):
         self.board = None
         self.browser = Browser()
-        self.start()
 
     def start(self, load_wait=2):
         print(f'Opening {self.url} ...')
@@ -118,16 +109,41 @@ class Game:
         time.sleep(load_wait)
 
     def play(self):
+        self.start()
         while True:
-            self.parse_board()
+            self.parse()
             whatiwant = input('What you want? ')
+            if whatiwant == 'exit':
+                self.browser.close()
+                whatiwant = 'done'
+            if whatiwant in 'done':
+                break
             print('AHHHHHH!', whatiwant)
 
-    def parse_board(self):
+    def get_next_move_box(self):
+        return BoundingBox.from_dimensions(302, 83, 50, 69)
+
+    def get_board_box(self, size):
+        # TODO: Move magic numbers to more appropriate place
+        board_width, board_height = 654, 976
+        board_x_offset = 8  # No idea why I have to do this...
+        board_y_offset = 32
+        # This is pretty counter-intuitive...feels like I should taking half the
+        # remaining width (browser width - game width), but this works I guess
+        width = size['width'] - board_width / 2 - board_x_offset
+        return BoundingBox.from_dimensions(
+            width, board_y_offset, board_width, board_height)
+
+    def parse(self):
         # Capture board position
-        self.board = self.browser.snapshot()
+        window_size = self.browser.snapshot(SNAPSHOT_FILE)
+        box = self.get_board_box(window_size)
+        snap = Snapshot.load(SNAPSHOT_FILE, box)
+        box = self.get_next_move_box()
+        snap.crop(box).show()
+        self.board = snap.datapoints_to_board()
+        print(self.board.tiles)
 
 
 if __name__ == '__main__':
-    g = Game()
-    g.play()
+    Game().play()

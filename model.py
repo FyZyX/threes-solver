@@ -43,5 +43,10 @@ class Board:
         self._dimension = dimension
         self.tiles = tiles if tiles is not None else numpy.zeros((4, 4))
 
+    def from_datapoints(self, image: Image):
+        datapoints = self.extract_datapoints(image)
+        value = self.model.predict(datapoints)
+        return Board(numpy.resize(value, (4, 4)))
+
     def set_tile(self, i, j, tile):
         self.tiles[i, j] = tile
