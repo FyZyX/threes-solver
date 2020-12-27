@@ -2,7 +2,8 @@ import numpy
 from PIL import Image
 
 
-class Box:
+class BoundingBox:
+
     def __init__(self, left, top, right, bottom):
         self.left = left
         self.top = top
@@ -35,3 +36,12 @@ class Tile:
         dimensions = (resolution, round(resolution * 1.5))
         tile = self.image.convert(mode='L').resize(dimensions)
         return numpy.asarray(tile).flatten()
+
+
+class Board:
+    def __init__(self, tiles=None, dimension=4):
+        self._dimension = dimension
+        self.tiles = tiles if tiles is not None else numpy.zeros((4, 4))
+
+    def set_tile(self, i, j, tile):
+        self.tiles[i, j] = tile

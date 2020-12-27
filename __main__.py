@@ -6,7 +6,7 @@ import numpy
 from PIL import Image
 from selenium import webdriver
 
-from model import Box, Tile
+from model import BoundingBox, Tile, Board
 
 USER = os.environ.get('USER', 'lucaslofaro')
 CHROME_PROFILE = os.path.join(os.sep, 'Users', USER, '.config', 'google-chrome')
@@ -20,19 +20,10 @@ def save_training_image(image, coords):
 
 
 class Snapshot:
-    def __init__(self, size):
+    def __init__(self):
         self.filename = SNAPSHOT_FILE
 
         self.model = self.load_recognizer()
-
-        game_width, game_height = 654, 976
-        game_x_offset = 8  # No idea why I have to do this...
-        game_y_offset = 32
-        # This is pretty counter-intuitive...feels like I should taking half the
-        # remaining width (browser width - game width), but this works I guess
-        width = size['width'] - game_width / 2 - game_x_offset
-        box = Box.from_dimensions(width, game_y_offset, game_width, game_height)
-        self.crop(box)
 
         os.makedirs('tiles-cache', exist_ok=True)
 
@@ -42,33 +33,50 @@ class Snapshot:
         with open('tile_recognizer.pickle', 'rb') as fh:
             return pickle.load(fh)
 
-    def crop_tiles(self, board: Image):
-        box = Box.from_dimensions(101, 240, 100, 148)
+    def datapoints_to_board(self, image: Image):
+        datapoints = self.extract_datapoints(image)
+        value = self.model.predict(datapoints)
+        b = Board(numpy.resize(value, (4, 4)))
+        print(b.tiles)
+
+    def extract_datapoints(self, image: Image):
+        tile_offset = 101, 240
+        tile_width, tile_height = 100, 148
+        box = BoundingBox.from_dimensions(*tile_offset, tile_width, tile_height)
         x_pad, y_pad = 18, 10
 
-        tiles = []
+        datapoints = []
         for i, j in [(i, j) for i in range(4) for j in range(4)]:
             x_offset = (box.width + x_pad) * j
             y_offset = (box.height + y_pad) * i
-            tile_box = Box(box.left + x_offset,
-                           box.top + y_offset,
-                           box.right + x_offset,
-                           box.bottom + y_offset)
-            tile = board.crop(tile_box.coordinates)
+            tile_box = BoundingBox(box.left + x_offset,
+                                   box.top + y_offset,
+                                   box.right + x_offset,
+                                   box.bottom + y_offset)
+            tile = image.crop(tile_box.coordinates)
             tile = Tile(tile)
-            tiles.append(tile.to_datapoint())
-            # save_training_image(tile, (i, j))
+            datapoints.append(tile.to_datapoint())
 
-        value = self.model.predict(tiles)
-        board = numpy.resize(value, (4, 4))
-        print(board)
+        return datapoints
 
     def crop(self, box):
         with Image.open(self.filename) as board:
             board = board.crop(box.coordinates)
 
-            self.crop_tiles(board)
+            self.datapoints_to_board(board)
             board.save(self.filename)
+
+    def capture(self, size):
+        # TODO: Move magic numbers to more appropriate place
+        board_width, board_height = 654, 976
+        board_x_offset = 8  # No idea why I have to do this...
+        board_y_offset = 32
+        # This is pretty counter-intuitive...feels like I should taking half the
+        # remaining width (browser width - game width), but this works I guess
+        width = size['width'] - board_width / 2 - board_x_offset
+        box = BoundingBox.from_dimensions(
+            width, board_y_offset, board_width, board_height)
+        self.crop(box)
 
 
 class Browser:
@@ -89,7 +97,7 @@ class Browser:
     def snapshot(self):
         self._driver.save_screenshot(SNAPSHOT_FILE)
         window_size = self._driver.get_window_size()
-        snap = Snapshot(window_size)
+        snap = Snapshot().capture(window_size)
         print(f"Captured snapshot")
         return snap
 
