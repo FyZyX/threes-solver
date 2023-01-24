@@ -6,6 +6,15 @@ class Tile:
     def __init__(self, value=0):
         self.value = value
 
+    def is_empty(self):
+        return self.value == 0
+
+    def can_merge(self, destination: 'Tile'):
+        return self.value == destination.value and self.value != 0
+
+    def __str__(self):
+        return str(self.value)
+
 
 class Index:
     def __init__(self, row=None, col=None):
@@ -27,27 +36,22 @@ class Index:
 
 class Board:
     def __init__(self):
-        # Initialize the game board as a 4x4 grid of zeroes
-        self.tiles = [
-            [0, 0, 0, 0],
-            [0, 0, 0, 0],
-            [0, 0, 0, 0],
-            [0, 0, 0, 0],
-        ]
-        # self.tiles = [[Tile() for _ in range(4)] for _ in range(4)]
+        self.tiles = [[Tile() for _ in range(4)] for _ in range(4)]
+        self[Index()] = Tile(random.choice([1, 2]))
+        self[Index()] = Tile(random.choice([1, 2]))
 
     def __getitem__(self, index: Index):
         return self.tiles[index.row][index.col]
 
-    def __setitem__(self, index: Index, value):
+    def __setitem__(self, index: Index, value: Tile):
         self.tiles[index.row][index.col] = value
 
     def spawn(self, direction):
         while True:
             index = Index(row=3).rotate(direction)
-            if self[index] == 0:
+            if self[index].is_empty():
                 break
-        self[index] = random.choice([1, 2])
+        self[index] = Tile(random.choice([1, 2]))
 
     def slide(self, direction):
         for row, col in itertools.product(range(1, 4), range(4)):
@@ -55,28 +59,23 @@ class Board:
             destination_index = Index(row - 1, col).rotate(direction)
             source = self[source_index]
             destination = self[destination_index]
-            if source == 0:
+            if source.is_empty():
                 continue
-            destination_is_empty = destination == 0
-            destination_is_equal = destination == source
-            if destination_is_empty or destination_is_equal:
-                self[destination_index] = source + destination
-                self[source_index] = 0
+            if destination.is_empty() or source.can_merge(destination):
+                destination.value += source.value
+                source.value = 0
 
     def move(self, direction):
         self.slide(direction)
         self.spawn(direction)
 
     def show(self):
-        # Print the current game board
         for row in self.tiles:
-            print(row)
+            print(" ".join(map(str, row)))
 
 
 def play():
     board = Board()
-    board[Index()] = random.choice([1, 2])
-    board[Index()] = random.choice([1, 2])
     # Game loop
     while True:
         board.show()
