@@ -1,27 +1,20 @@
 from board import Board
+from move import Move
 
-class Game:
-    def __init__(self):
-        self.board = Board()
 
-    def print_board(self):
-        for row in self.board.board:
-            print(row)
-        print()
+def main():
+    board = Board()
+    move = Move(board)
 
-    def get_user_move(self):
-        moves = ['up', 'right', 'down', 'left']
-        direction = input("Enter direction (up, right, down, left): ")
-        if direction in moves:
-            return moves.index(direction)
-        else:
-            print("Invalid direction! Please enter again.")
-            return self.get_user_move()
+    while True:
+        board.display_board()
+        direction = input("Enter direction (W/A/S/D): ")
+        move.execute_move(direction)
 
-    def play(self):
-        while not self.board.check_for_end():
-            self.print_board()
-            direction = self.get_user_move()
-            self.board.move(direction)
-        print("Game Over")
-        self.print_board()
+        if board.check_game_over():
+            print("Game Over!")
+            break
+
+
+if __name__ == "__main__":
+    main()
