@@ -34,13 +34,13 @@ class Move:
         if not tile2:
             self.board.board[r2][c2] = tile1
             self.board.board[r1][c1] = None
-        # If both tiles are not None and their values are equal, merge them
-        elif tile1.get_value() == tile2.get_value():
-            tile2.set_value(tile1.get_value() + tile2.get_value())
-            self.board.board[r1][c1] = None
         # If one tile is 1 and the other is 2, merge them to create 3
         elif {tile1.get_value(), tile2.get_value()} == {1, 2}:
             tile2.set_value(3)
+            self.board.board[r1][c1] = None
+        # If both tiles have the same value and it's 3 or more, merge them
+        elif tile1.get_value() == tile2.get_value() and tile1.get_value() >= 3:
+            tile2.set_value(tile1.get_value() * 2)
             self.board.board[r1][c1] = None
 
     def execute_move(self, direction):

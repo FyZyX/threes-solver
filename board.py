@@ -18,7 +18,8 @@ class Board:
                 else:
                     # convert the tile value to a string and center it in a 5-character-wide space
                     row_strs.append(str(tile.get_value()).center(5))
-            print('|' + '|'.join(row_strs) + '|')  # print each row with '|' as a column separator
+            print('|' + '|'.join(
+                row_strs) + '|')  # print each row with '|' as a column separator
         print('-' * 25)  # draw a border at the bottom
 
     def add_new_tile(self):
@@ -43,17 +44,38 @@ class Board:
 
     def can_merge_with_neighbor(self, r, c, value):
         # Check above
-        if r > 0 and self.board[r - 1][c].get_value() == value:
+        if r > 0 and self.board[r - 1][c] and self.board[r - 1][c].get_value() == value:
             return True
         # Check below
-        if r < 3 and self.board[r + 1][c].get_value() == value:
+        if r < 3 and self.board[r + 1][c] and self.board[r + 1][c].get_value() == value:
             return True
         # Check left
-        if c > 0 and self.board[r][c - 1].get_value() == value:
+        if c > 0 and self.board[r][c - 1] and self.board[r][c - 1].get_value() == value:
             return True
         # Check right
-        if c < 3 and self.board[r][c + 1].get_value() == value:
+        if c < 3 and self.board[r][c + 1] and self.board[r][c + 1].get_value() == value:
             return True
+
+        # Special check for 1s and 2s being able to merge
+        if value == 1:
+            if r > 0 and self.board[r - 1][c] and self.board[r - 1][c].get_value() == 2:
+                return True
+            if r < 3 and self.board[r + 1][c] and self.board[r + 1][c].get_value() == 2:
+                return True
+            if c > 0 and self.board[r][c - 1] and self.board[r][c - 1].get_value() == 2:
+                return True
+            if c < 3 and self.board[r][c + 1] and self.board[r][c + 1].get_value() == 2:
+                return True
+
+        if value == 2:
+            if r > 0 and self.board[r - 1][c] and self.board[r - 1][c].get_value() == 1:
+                return True
+            if r < 3 and self.board[r + 1][c] and self.board[r + 1][c].get_value() == 1:
+                return True
+            if c > 0 and self.board[r][c - 1] and self.board[r][c - 1].get_value() == 1:
+                return True
+            if c < 3 and self.board[r][c + 1] and self.board[r][c + 1].get_value() == 1:
+                return True
 
         return False
 
