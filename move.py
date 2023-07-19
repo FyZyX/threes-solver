@@ -2,46 +2,42 @@ class Move:
     def __init__(self, board):
         self.board = board
 
+    def move_and_merge(self, from_row, from_col, to_row, to_col):
+        from_tile = self.board.board[from_row][from_col]
+        to_tile = self.board.board[to_row][to_col]
+
+        # If the tile is empty, we simply move
+        if not to_tile:
+            self.board.board[to_row][to_col] = from_tile
+            self.board.board[from_row][from_col] = None
+        # Merge if possible
+        elif to_tile.can_merge_with(from_tile):
+            to_tile.merge(from_tile)
+            self.board.board[from_row][from_col] = None
+
     def move_up(self):
-        for r in range(1, 4):
-            for c in range(4):
-                self.move_merge(r, c, r - 1, c)
+        # Only try to move tile if it is not on the first row
+        for row in range(1, 4):
+            for col in range(4):
+                self.move_and_merge(row, col, row-1, col)
 
     def move_down(self):
-        for r in range(2, -1, -1):
-            for c in range(4):
-                self.move_merge(r, c, r + 1, c)
+        # Only try to move tile if it is not on the last row
+        for row in range(2, -1, -1):
+            for col in range(4):
+                self.move_and_merge(row, col, row+1, col)
 
     def move_left(self):
-        for c in range(1, 4):
-            for r in range(4):
-                self.move_merge(r, c, r, c - 1)
+        # Only try to move tile if it is not in the first column
+        for col in range(1, 4):
+            for row in range(4):
+                self.move_and_merge(row, col, row, col-1)
 
     def move_right(self):
-        for c in range(2, -1, -1):
-            for r in range(4):
-                self.move_merge(r, c, r, c + 1)
-
-    def move_merge(self, r1, c1, r2, c2):
-        tile1 = self.board.board[r1][c1]
-        tile2 = self.board.board[r2][c2]
-
-        # If the tile at (r1, c1) is None, return
-        if not tile1:
-            return
-
-        # If the tile at (r2, c2) is None, move the tile at (r1, c1) to (r2, c2)
-        if not tile2:
-            self.board.board[r2][c2] = tile1
-            self.board.board[r1][c1] = None
-        # If one tile is 1 and the other is 2, merge them to create 3
-        elif {tile1.get_value(), tile2.get_value()} == {1, 2}:
-            tile2.set_value(3)
-            self.board.board[r1][c1] = None
-        # If both tiles have the same value and it's 3 or more, merge them
-        elif tile1.get_value() == tile2.get_value() and tile1.get_value() >= 3:
-            tile2.set_value(tile1.get_value() * 2)
-            self.board.board[r1][c1] = None
+        # Only try to move tile if it is not in the last column
+        for col in range(2, -1, -1):
+            for row in range(4):
+                self.move_and_merge(row, col, row, col+1)
 
     def execute_move(self, direction):
         if direction.upper() == 'W':
