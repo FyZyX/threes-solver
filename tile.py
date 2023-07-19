@@ -1,7 +1,6 @@
 class Tile:
     def __init__(self, value):
         self.value = value
-        self.merged = False
 
     def __repr__(self):
         return str(self.value)
@@ -17,7 +16,7 @@ class Tile:
         self.value = value
 
     def can_merge_with(self, other):
-        if not other or self.merged or other.merged:
+        if not other:
             return False
 
         if (self.value, other.get_value()) in [(1, 2), (2, 1)]:
@@ -33,5 +32,3 @@ class Tile:
                 self.value = 3
             else:
                 self.value *= 2
-            self.merged = True
-            other.merged = True
