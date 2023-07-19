@@ -9,8 +9,17 @@ class Board:
         self.add_new_tile()
 
     def display_board(self):
+        print('-' * 25)  # draw a border at the top
         for row in self.board:
-            print([tile.get_value() if tile else None for tile in row])
+            row_strs = []
+            for tile in row:
+                if tile is None:
+                    row_strs.append(' ' * 5)
+                else:
+                    # convert the tile value to a string and center it in a 5-character-wide space
+                    row_strs.append(str(tile.get_value()).center(5))
+            print('|' + '|'.join(row_strs) + '|')  # print each row with '|' as a column separator
+        print('-' * 25)  # draw a border at the bottom
 
     def add_new_tile(self):
         r, c = random.choice(
