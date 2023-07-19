@@ -79,7 +79,7 @@ class TestMoveMethods(unittest.TestCase):
                        [Tile(3), Tile(6), Tile(12), Tile(24)],
                        [Tile(3), Tile(6), Tile(12), Tile(24)]]
         move = Move(board)
-        move.move_left()  # no tiles should move
+        move.move_up()  # no tiles should move
         self.assertEqual(board.board, [[Tile(6), Tile(12), Tile(24), Tile(48)],
                                        [Tile(3), Tile(6), Tile(12), Tile(24)],
                                        [Tile(3), Tile(6), Tile(12), Tile(24)],
