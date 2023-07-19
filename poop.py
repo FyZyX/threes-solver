@@ -9,8 +9,13 @@ class Tile:
     def is_empty(self):
         return self.value == 0
 
-    def can_merge(self, destination: 'Tile'):
-        return self.value == destination.value and self.value != 0
+    def clear(self):
+        self.value = 0
+
+    def merge(self, destination: 'Tile'):
+        if destination.is_empty() or self.value == destination.value:
+            destination.value += self.value
+            self.clear()
 
     def __str__(self):
         return str(self.value)
@@ -61,9 +66,7 @@ class Board:
             destination = self[destination_index]
             if source.is_empty():
                 continue
-            if destination.is_empty() or source.can_merge(destination):
-                destination.value += source.value
-                source.value = 0
+            source.merge(destination)
 
     def move(self, direction):
         self.slide(direction)
@@ -80,9 +83,12 @@ def play():
     while True:
         board.show()
         # Get input from the user for the next move
-        move_dir = input("Enter direction to move (up, down, left, right): ")
+        while True:
+            direction = input("Enter direction to move (up, down, left, right): ")
+            if direction in ["u", "d", "r", "l"]:
+                break
         # Move the tiles and add a new tile
-        board.move(move_dir)
+        board.move(direction)
 
 
 if __name__ == '__main__':
