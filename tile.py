@@ -12,9 +12,6 @@ class Tile:
     def get_value(self):
         return self.value
 
-    def set_value(self, value):
-        self.value = value
-
     def merge(self, other):
         if other and ((self.value, other.get_value()) in [(1, 2), (2, 1)] or (self.value == other.get_value() and self.value >= 3)):
             self.value = 3 if self.value in [1, 2] else self.value * 2
