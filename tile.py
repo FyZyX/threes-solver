@@ -15,20 +15,8 @@ class Tile:
     def set_value(self, value):
         self.value = value
 
-    def can_merge_with(self, other):
-        if not other:
-            return False
-
-        if (self.value, other.get_value()) in [(1, 2), (2, 1)]:
-            return True
-        if self.value == other.get_value() and self.value >= 3:
-            return True
-
-        return False
-
     def merge(self, other):
-        if self.can_merge_with(other):
-            if self.value in [1, 2]:
-                self.value = 3
-            else:
-                self.value *= 2
+        if other and ((self.value, other.get_value()) in [(1, 2), (2, 1)] or (self.value == other.get_value() and self.value >= 3)):
+            self.value = 3 if self.value in [1, 2] else self.value * 2
+            return True
+        return False
