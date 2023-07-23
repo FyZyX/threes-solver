@@ -1,3 +1,4 @@
+import itertools
 import random
 from tile import Tile
 
@@ -23,23 +24,25 @@ class Board:
         return board_string
 
     def add_new_tile(self):
-        r, c = random.choice(
-            [(i, j) for i in range(4) for j in range(4) if not self.board[i][j]])
-        self.board[r][c] = Tile(random.choice([1, 2, 3]))
+        indices = [
+            (i, j)
+            for i, j in itertools.product(range(4), range(4))
+            if not self.board[i][j]
+        ]
+        row, col = random.choice(indices)
+        self.board[row][col] = Tile(random.choice([1, 2, 3]))
 
-    def check_game_over(self):
+    def is_game_over(self):
         for r in range(4):
             for c in range(4):
-                # If there is an empty space, return False (game is not over)
                 if self.board[r][c] is None:
                     return False
 
-                # If the current tile can merge with a neighbor, return False (game is not over)
                 tile_value = self.board[r][c].get_value()
                 if self.can_merge_with_neighbor(r, c, tile_value):
                     return False
 
-        # If there are no empty spaces and no possible merges, return True (game is over)
+        # no empty spaces and no possible merges
         return True
 
     def can_merge_with_neighbor(self, r, c, value):

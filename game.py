@@ -11,7 +11,7 @@ def main():
         direction = input("Enter direction (W/A/S/D): ")
         move.execute_move(direction)
 
-        if board.check_game_over():
+        if board.is_game_over():
             print("Game Over!")
             break
 
