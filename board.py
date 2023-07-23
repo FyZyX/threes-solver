@@ -32,55 +32,37 @@ class Board:
         row, col = random.choice(indices)
         self.board[row][col] = Tile(random.choice([1, 2, 3]))
 
+    @staticmethod
+    def is_in_bounds(row, col):
+        return 0 <= row < 4 and 0 <= col < 4
+
+    def can_merge_with_neighbor(self, row, col, tile):
+        indices = [(row - 1, col), (row + 1, col), (row, col - 1), (row, col + 1)]
+        for neighbor_row, neighbor_col in indices:
+            if self.is_in_bounds(neighbor_row, neighbor_col):
+                continue
+
+            from_tile = self.board[neighbor_row][neighbor_col]
+            if not from_tile:
+                continue
+
+            if from_tile.can_merge(tile):
+                return True
+
+        return False
+
     def is_game_over(self):
         for r in range(4):
             for c in range(4):
                 if self.board[r][c] is None:
                     return False
 
-                tile_value = self.board[r][c].get_value()
-                if self.can_merge_with_neighbor(r, c, tile_value):
+                tile = self.board[r][c]
+                if self.can_merge_with_neighbor(r, c, tile):
                     return False
 
         # no empty spaces and no possible merges
         return True
-
-    def can_merge_with_neighbor(self, r, c, value):
-        # Check above
-        if r > 0 and self.board[r - 1][c] and self.board[r - 1][c].get_value() == value:
-            return True
-        # Check below
-        if r < 3 and self.board[r + 1][c] and self.board[r + 1][c].get_value() == value:
-            return True
-        # Check left
-        if c > 0 and self.board[r][c - 1] and self.board[r][c - 1].get_value() == value:
-            return True
-        # Check right
-        if c < 3 and self.board[r][c + 1] and self.board[r][c + 1].get_value() == value:
-            return True
-
-        # Special check for 1s and 2s being able to merge
-        if value == 1:
-            if r > 0 and self.board[r - 1][c] and self.board[r - 1][c].get_value() == 2:
-                return True
-            if r < 3 and self.board[r + 1][c] and self.board[r + 1][c].get_value() == 2:
-                return True
-            if c > 0 and self.board[r][c - 1] and self.board[r][c - 1].get_value() == 2:
-                return True
-            if c < 3 and self.board[r][c + 1] and self.board[r][c + 1].get_value() == 2:
-                return True
-
-        if value == 2:
-            if r > 0 and self.board[r - 1][c] and self.board[r - 1][c].get_value() == 1:
-                return True
-            if r < 3 and self.board[r + 1][c] and self.board[r + 1][c].get_value() == 1:
-                return True
-            if c > 0 and self.board[r][c - 1] and self.board[r][c - 1].get_value() == 1:
-                return True
-            if c < 3 and self.board[r][c + 1] and self.board[r][c + 1].get_value() == 1:
-                return True
-
-        return False
 
     def get_score(self):
         return sum(tile.get_value() for row in self.board for tile in row if tile)
