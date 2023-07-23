@@ -1,3 +1,6 @@
+import itertools
+
+
 class Move:
     def __init__(self, board):
         self.board = board
@@ -16,9 +19,8 @@ class Move:
                 self.board.board[from_row][from_col] = None
 
     def iterate_over_grid(self, row_range, col_range, target):
-        for row in row_range:
-            for col in col_range:
-                target(row, col)
+        for row, col in itertools.product(row_range, col_range):
+            target(row, col)
 
     def move_up(self):
         self.iterate_over_grid(
