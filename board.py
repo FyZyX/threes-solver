@@ -8,19 +8,19 @@ class Board:
         self.add_new_tile()
         self.add_new_tile()
 
-    def display_board(self):
-        print('-' * 25)  # draw a border at the top
+    def __str__(self):
+        board_string = ""
+        board_string += "-" * 25 + "\n"
         for row in self.board:
             row_strs = []
             for tile in row:
                 if tile is None:
                     row_strs.append(' ' * 5)
                 else:
-                    # convert the tile value to a string and center it in a 5-character-wide space
                     row_strs.append(str(tile.get_value()).center(5))
-            print('|' + '|'.join(
-                row_strs) + '|')  # print each row with '|' as a column separator
-        print('-' * 25)  # draw a border at the bottom
+            board_string += "|" + "|".join(row_strs) + "|" + "\n"
+        board_string += "-" * 25 + "\n"
+        return board_string
 
     def add_new_tile(self):
         r, c = random.choice(

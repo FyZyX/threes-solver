@@ -7,7 +7,7 @@ def main():
     move = Move(board)
 
     while True:
-        board.display_board()
+        print(board)
         direction = input("Enter direction (W/A/S/D): ")
         move.execute_move(direction)
 
