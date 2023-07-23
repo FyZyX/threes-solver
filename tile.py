@@ -9,10 +9,13 @@ class Tile:
         if isinstance(other, Tile):
             return self.value == other.value
 
+    def __add__(self, tile: "Tile"):
+        return Tile(self.value + tile.value)
+
     def get_value(self):
         return self.value
 
-    def can_merge(self, tile: "Tile"):
+    def can_merge(self, tile: "Tile") -> bool:
         is_1_2 = (self.value, tile.get_value()) in [(1, 2), (2, 1)]
         if is_1_2:
             return True
@@ -21,10 +24,4 @@ class Tile:
         if is_3ish:
             return True
 
-        return False
-
-    def merge(self, tile: "Tile"):
-        if tile and self.can_merge(tile):
-            self.value += tile.get_value()
-            return True
         return False

@@ -8,7 +8,8 @@ class Move:
 
         if from_tile:
             if to_tile:
-                if to_tile.merge(from_tile):
+                if to_tile.can_merge(from_tile):
+                    self.board.board[to_row][to_col] = from_tile + to_tile
                     self.board.board[from_row][from_col] = None
             else:
                 self.board.board[to_row][to_col] = from_tile
