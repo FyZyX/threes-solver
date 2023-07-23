@@ -12,10 +12,19 @@ class Tile:
     def get_value(self):
         return self.value
 
-    def merge(self, other):
-        is_1_2 = (self.value, other.get_value()) in [(1, 2), (2, 1)]
-        is_3ish = (self.value == other.get_value() and self.value >= 3)
-        if other and (is_1_2 or is_3ish):
-            self.value = 3 if self.value in [1, 2] else self.value * 2
+    def can_merge(self, tile: "Tile"):
+        is_1_2 = (self.value, tile.get_value()) in [(1, 2), (2, 1)]
+        if is_1_2:
+            return True
+
+        is_3ish = (self.value == tile.get_value() and self.value >= 3)
+        if is_3ish:
+            return True
+
+        return False
+
+    def merge(self, tile: "Tile"):
+        if tile and self.can_merge(tile):
+            self.value += tile.get_value()
             return True
         return False
