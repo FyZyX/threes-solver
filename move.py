@@ -47,8 +47,12 @@ class Move:
         )
 
     def execute_move(self, direction):
-        move_mapping = {'W': self.move_up, 'A': self.move_left, 'S': self.move_down,
-                        'D': self.move_right}
+        move_mapping = {
+            'W': self.move_up,
+            'A': self.move_left,
+            'S': self.move_down,
+            'D': self.move_right,
+        }
         move_func = move_mapping.get(direction.upper())
 
         if move_func:
